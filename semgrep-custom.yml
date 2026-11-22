@@ -1,0 +1,6 @@
+rules:
+  - id: no-eval
+    languages: [javascript]
+    severity: ERROR
+    message: "eval() runs text as code and can cause code injection. Avoid it."
+    pattern: eval(...)

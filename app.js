@@ -32,18 +32,35 @@ function getSession() {
  return USERS.find((x) => String(x.id) === id) || null;
 }
 
+let failedLogins = 0;
+let lockedUntil = 0;
+
 $("loginForm").addEventListener("submit", async (e) => {
  e.preventDefault();
+ const now = Date.now();
+ if (now < lockedUntil) {
+ const secs = Math.ceil((lockedUntil - now) / 1000);
+ $("loginMsg").textContent = "Too many attempts. Try again in " + secs + " seconds.";
+ return;
+ }
  const email = $("email").value;
  const pw = $("password").value;
  const u = USERS.find((x) => x.email === email);
  if (!u || (await sha256("uw" + u.id + pw)) !== u.passwordHash) {
+ failedLogins++;
+ if (failedLogins >= 3) {
+ lockedUntil = Date.now() + 30000;
+ failedLogins = 0;
+ $("loginMsg").textContent = "Too many attempts. Sign-in blocked for 30 seconds.";
+ return;
+ }
  $("loginMsg").textContent = "Login failed for " + email;
  return;
  }
+ failedLogins = 0;
  sessionStorage.setItem("uid", String(u.id));
  const next = params.get("next");
- if (next) { location.href = next; return; }
+ if (next && /^[A-Za-z0-9_-]+\.html$/.test(next)) { location.assign(next); return; }
  render();
 });
 
